@@ -521,7 +521,12 @@ html,body{overflow-x:hidden;max-width:100%}
   /* ================= 云端共享（可选） =================
      填上 Supabase 项目 URL 与 anon key 后，社区动态与照片对所有访客共享。
      留空 = 纯本机模式，行为与之前完全一致；健康数据始终只留在本机。 */
-  const CLOUD = { url: "", key: "", bucket: "pawlog", table: "pawlog_posts" };
+  const CLOUD = {
+    url: "https://qfnzdizcxfymaarifkud.supabase.co",
+    key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmbnpkaXpjeGZ5bWFhcmlma3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0OTU3MjQsImV4cCI6MjEwODA3MTcyNH0.CONunWDukiyCnd-81eG5v8IruAYtX0aAYoCZESYXon8",
+    bucket: "pawlog",
+    table: "pawlog_posts"
+  };
   const cloudOn = () => !!(CLOUD.url && CLOUD.key);
   const remote = { posts: [], loading: false, error: "" };
   const cloudBase = () => CLOUD.url.replace(/\/+$/, "");
