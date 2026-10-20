@@ -37,7 +37,7 @@ ul{margin:0;padding:0;list-style:none}
 .phone{width:100%;max-width:480px;min-width:0;margin:0 auto;min-height:100vh;position:relative;display:flex;flex-direction:column;box-sizing:border-box}
 @media(min-width:1024px){
   .shell{max-width:1180px;margin:0 auto;padding:28px 24px;gap:44px;align-items:center}
-  .side{display:block;flex:1 1 420px;max-width:520px;align-self:center;animation:fadeUp .7s ease both}
+  .side{display:block;flex:1 1 420px;max-width:520px;align-self:center;animation:fadeUp .7s ease}
   .phone{
     flex:0 0 480px;min-height:auto;height:min(910px, calc(100vh - 56px));
     background:var(--cream);border-radius:36px;overflow:hidden;
@@ -85,7 +85,7 @@ ul{margin:0;padding:0;list-style:none}
 /* ---------- scroll body ---------- */
 .view{flex:1;overflow-y:auto;overflow-x:hidden;padding:15px 15px calc(94px + var(--safe))}
 .view::-webkit-scrollbar{width:0}
-section{animation:pop .32s ease both}
+section{animation:pop .32s ease}
 
 /* ---------- hero ---------- */
 .hero{
@@ -211,7 +211,7 @@ html,body{overflow-x:hidden;max-width:100%}
 .cal-day[data-on="1"] i{background:var(--coral)}
 
 /* ---------- community ---------- */
-.post{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:12px;box-shadow:var(--shadow);animation:pop .3s ease both}
+.post{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-top:12px;box-shadow:var(--shadow);animation:pop .3s ease}
 .post-h{display:flex;align-items:center;gap:10px}
 .post-h .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:18px;background:var(--sand)}
 .post-h .nm{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
@@ -470,8 +470,16 @@ html,body{overflow-x:hidden;max-width:100%}
   }
   function allEvents() {
     const ev = [];
-    S.weights.forEach(w => ev.push({ kind:"weight", d:w.d, emoji:"⚖️", title:`体重记录 ${w.kg} kg`,
-      desc: w.kg >= (S.pet.range ? S.pet.range[0] : 0) ? "位于标准区间内，增长曲线平稳" : "低于标准区间下限，建议关注进食量" }));
+    S.weights.forEach((w, i) => {
+      const prev = i > 0 ? S.weights[i - 1].kg : null;
+      const delta = prev === null ? null : Math.round((w.kg - prev) * 10) / 10;
+      const inBand = S.pet.range && w.kg >= S.pet.range[0] && w.kg <= S.pet.range[1];
+      const isLast = i === S.weights.length - 1;
+      const desc = isLast && S.pet.range
+        ? (inBand ? `位于${S.pet.rangeNote}区间内` : `超出${S.pet.rangeNote}区间，建议两周后复称`)
+        : delta === null ? "第一次记录，作为后续对比基线" : `较上次 ${delta > 0 ? "+" : ""}${delta} kg`;
+      ev.push({ kind:"weight", d:w.d, emoji:"⚖️", title:`体重记录 ${w.kg} kg`, desc });
+    });
     S.vaccines.forEach(v => ev.push({ kind:"vaccine", d:v.date, emoji:"💉", title:`接种 ${v.name}`, desc:`有效期至 ${v.next}` }));
     S.deworm.forEach(v => ev.push({ kind:"deworm", d:v.date, emoji:"🪱", title:`${v.name} · ${v.drug}`, desc:`周期 ${v.cycle}，下次 ${v.next}` }));
     S.posts.filter(p => p.mine).forEach(p => ev.push({ kind:"post", d:p.date || today(), emoji:"📸", title:"发布了一条日常", desc:p.text, media:p.media }));
@@ -743,7 +751,7 @@ html,body{overflow-x:hidden;max-width:100%}
     const ev = allEvents().filter(e => tlFilter === "全部" ? e.kind !== "milestone" ? true : true : e.kind === map[tlFilter]);
     return `<section>
       <div class="card" style="margin-top:0">
-        <div class="card-h"><h3>成长时间线</h3><span class="tag">${allEvents().length} 条记录</span></div>
+        <div class="card-h"><h3>按类型筛选</h3><span class="tag">共 ${allEvents().length} 条</span></div>
         <div class="chips">
           ${filters.map(f => `<button class="chip" data-tlf="${f}" aria-pressed="${f === tlFilter}">${f}</button>`).join("")}
         </div>
