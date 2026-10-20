@@ -130,7 +130,7 @@ html,body{overflow-x:hidden;max-width:100%}
 .chip:active{transform:scale(.96)}
 .chip[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:700}
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;
   background:var(--coral);color:#fff;border-radius:14px;padding:11px 16px;font-size:14px;font-weight:700;
   box-shadow:0 10px 22px -13px rgba(228,115,88,.95);transition:.16s;
 }
@@ -164,8 +164,9 @@ html,body{overflow-x:hidden;max-width:100%}
 .tl-body{background:#FFFCF8;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:5px}
 .tl-body b{font-size:13.5px}
 .tl-body p{font-size:12.5px;color:#6B584C;margin-top:2px}
-.tl-photo{margin-top:8px;display:flex;gap:6px}
+.tl-photo{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
 .tl-photo i{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#FDE6D5,#F8D6C7);display:grid;place-items:center;font-size:20px}
+.tl-photo img{width:52px;height:52px;border-radius:10px;object-fit:cover;display:block;background:var(--sand)}
 .month-head{
   position:sticky;top:0;z-index:5;margin:16px -4px 10px;padding:6px 4px;
   font-size:12px;font-weight:800;color:var(--caramel);letter-spacing:.5px;
@@ -240,6 +241,11 @@ html,body{overflow-x:hidden;max-width:100%}
 .post-b{font-size:13.5px;color:#4B3C33;margin:10px 0 0}
 .post-media{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
 .post-media i{aspect-ratio:1;border-radius:11px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,#FDE7D6,#F7D9C9)}
+.post-media img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:11px;display:block;background:var(--sand);cursor:zoom-in;transition:transform .18s ease}
+.post-media img:active{transform:scale(.985)}
+.post-media[data-n="1"]{grid-template-columns:1fr}
+.post-media[data-n="1"] img{aspect-ratio:4/3}
+.post-media[data-n="2"]{grid-template-columns:1fr 1fr}
 .post-a{display:flex;gap:18px;margin-top:11px;font-size:12.5px;color:var(--muted);align-items:center}
 .post-a button{display:inline-flex;align-items:center;gap:5px;color:inherit;transition:.16s}
 .post-a button:active{transform:scale(.95)}
@@ -324,6 +330,39 @@ html,body{overflow-x:hidden;max-width:100%}
 .tabbar button .pip{width:4px;height:4px;border-radius:50%;background:var(--coral);opacity:0;transform:scale(.4);transition:.2s}
 .tabbar button[aria-selected="true"] .pip{opacity:1;transform:scale(1)}
 
+/* ---------- uploader ---------- */
+.up{border:1px dashed #E8D5C4;border-radius:14px;padding:10px;background:#FFFCF8;transition:.16s}
+.up.drag{border-color:var(--coral);background:#FFF3EB}
+.up-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.up-grid:empty{display:none;margin-bottom:0}
+.thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sand)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .del{
+  position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
+  background:rgba(40,28,22,.66);color:#fff;font-size:14px;line-height:1;
+  display:grid;place-items:center;backdrop-filter:blur(4px);
+}
+.thumb .sk{width:100%;height:100%;border-radius:12px}
+.up-actions{display:flex;gap:8px}
+.up-btn{
+  flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 8px;
+  font-size:13px;font-weight:700;color:#6B584C;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:.16s;
+}
+.up-btn:active{transform:scale(.98)}
+.up-hint{font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
+
+/* ---------- lightbox ---------- */
+.lb{position:fixed;inset:0;z-index:200;background:rgba(24,16,12,.94);display:none;place-items:center}
+.lb[data-open="1"]{display:grid}
+.lb img{max-width:92vw;max-height:82vh;border-radius:12px;box-shadow:0 26px 60px -22px rgba(0,0,0,.8);animation:lbIn .18s ease}
+@keyframes lbIn{from{transform:scale(.965)}to{transform:none}}
+.lb .close{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;display:grid;place-items:center}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:22px;display:grid;place-items:center}
+.lb .nav.prev{left:12px}
+.lb .nav.next{right:12px}
+.lb .count{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#E8DBD2;font-size:12px;letter-spacing:.5px}
+
 /* ---------- sheet / toast / skeleton ---------- */
 .sheet-wrap{position:fixed;inset:0;z-index:80;display:grid;align-items:end;background:rgba(59,48,43,.36);opacity:0;pointer-events:none;transition:opacity .2s}
 .sheet-wrap[data-open="1"]{opacity:1;pointer-events:auto}
@@ -393,6 +432,14 @@ html,body{overflow-x:hidden;max-width:100%}
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div class="lb" id="lb" data-open="0" role="dialog" aria-modal="true" aria-label="查看大图">
+  <button class="close" data-lb="close" aria-label="关闭">×</button>
+  <button class="nav prev" data-lb="prev" aria-label="上一张">‹</button>
+  <img id="lb-img" alt="动态配图">
+  <button class="nav next" data-lb="next" aria-label="下一张">›</button>
+  <div class="count" id="lb-count"></div>
+</div>
+
 <script>
 (() => {
   "use strict";
@@ -458,7 +505,18 @@ html,body{overflow-x:hidden;max-width:100%}
   catch (e) { S = clone(SEED); }
   if (!S.settings) S.settings = clone(SEED.settings);
   if (!S.pet.range) S.pet.range = [10, 14];
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  let quotaWarned = false;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+    catch (e) {
+      if (!quotaWarned) {
+        quotaWarned = true;
+        toast("本地相册已满，先删掉旧动态里的图片再试");
+        setTimeout(() => { quotaWarned = false; }, 5000);
+      }
+      return false;
+    }
+  }
 
   /* ================= helpers ================= */
   const $ = (s, r = document) => r.querySelector(s);
@@ -482,6 +540,104 @@ html,body{overflow-x:hidden;max-width:100%}
   function sheet(html) { $("#sheet-body").innerHTML = html; $("#sheet").dataset.open = "1"; }
   const closeSheet = () => ($("#sheet").dataset.open = "0");
 
+  /* ================= image pipeline ================= */
+  const MAX_IMAGES = 12;   // 本地存储里最多保留的图片总数，超出淘汰最早的
+  const MAX_PER_POST = 3;  // 单条动态最多几张
+  let draftImgs = [];      // 发帖草稿：[{data} | {pending:true}]
+
+  /* 本地压到长边 1280 / JPEG 0.82，一张约 120–200KB，避免撑爆 localStorage */
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type || "")) return reject(new Error("not-image"));
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const max = 1280;
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          if (!w || !h) throw new Error("empty");
+          if (Math.max(w, h) > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+          const cv = document.createElement("canvas");
+          cv.width = w; cv.height = h;
+          const ctx = cv.getContext("2d");
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          resolve(cv.toDataURL("image/jpeg", 0.82));
+        } catch (e) {
+          URL.revokeObjectURL(url);
+          reject(e);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+      img.src = url;
+    });
+  }
+
+  function paintDraft() {
+    const grid = document.getElementById("up-grid");
+    if (!grid) return;
+    grid.innerHTML = draftImgs.map((it, i) => it.pending
+      ? `<div class="thumb"><div class="sk sk-block"></div></div>`
+      : `<div class="thumb"><img src="${it.data}" alt="已选图片 ${i + 1}"><button class="del" data-del="${i}" aria-label="删除这张图片">×</button></div>`
+    ).join("");
+  }
+
+  function addImages(files) {
+    const list = [].slice.call(files || []).filter(f => /^image\//.test(f.type || ""));
+    if (!list.length) { toast("只支持图片文件"); return; }
+    const room = MAX_PER_POST - draftImgs.filter(x => !x.pending).length - draftImgs.filter(x => x.pending).length;
+    if (room <= 0) { toast(`最多 ${MAX_PER_POST} 张图`); return; }
+    const take = list.slice(0, room);
+    if (list.length > room) toast(`已选 ${list.length} 张，本次只放得下 ${room} 张`);
+    take.forEach(f => draftImgs.push({ pending: true }));
+    paintDraft();
+    let seq = Promise.resolve();
+    take.forEach(f => {
+      seq = seq.then(() => compressImage(f).then(data => {
+        const k = draftImgs.findIndex(x => x.pending);
+        if (k >= 0) draftImgs[k] = { data }; else draftImgs.push({ data });
+      }).catch(() => {
+        const k = draftImgs.findIndex(x => x.pending);
+        if (k >= 0) draftImgs.splice(k, 1);
+        toast("有 1 张图片无法读取，已跳过");
+      }).then(paintDraft));
+    });
+    return seq;
+  }
+
+  function bindComposer() {
+    const shot = document.getElementById("in-shot");
+    const pick = document.getElementById("in-pick");
+    const zone = document.getElementById("up-zone");
+    if (shot) shot.addEventListener("change", e => { addImages(e.target.files); e.target.value = ""; });
+    if (pick) pick.addEventListener("change", e => { addImages(e.target.files); e.target.value = ""; });
+    if (zone) {
+      zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
+      zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+      zone.addEventListener("drop", e => {
+        e.preventDefault(); zone.classList.remove("drag");
+        addImages(e.dataTransfer && e.dataTransfer.files);
+      });
+    }
+    paintDraft();
+  }
+
+  /* 图片总量上限：超出时把最早的动态图片降级成占位块（保留条数与文案） */
+  function trimStoredImages() {
+    let total = 0;
+    S.posts.forEach(p => { if (p.images) total += p.images.length; });
+    if (total <= MAX_IMAGES) return;
+    for (let i = S.posts.length - 1; i >= 0 && total > MAX_IMAGES; i--) {
+      const p = S.posts[i];
+      if (!p.images || !p.images.length) continue;
+      total -= p.images.length;
+      p.media = p.images.length;
+      delete p.images;
+    }
+  }
+
   /* ================= derived ================= */
   const latestWeight = () => S.weights.length ? S.weights[S.weights.length - 1] : null;
   const friends = () => CITY_FRIENDS[S.pet.city] || CITY_FRIENDS["上海"];
@@ -502,7 +658,8 @@ html,body{overflow-x:hidden;max-width:100%}
     });
     S.vaccines.forEach(v => ev.push({ kind:"vaccine", d:v.date, emoji:"💉", title:`接种 ${v.name}`, desc:`有效期至 ${v.next}` }));
     S.deworm.forEach(v => ev.push({ kind:"deworm", d:v.date, emoji:"🪱", title:`${v.name} · ${v.drug}`, desc:`周期 ${v.cycle}，下次 ${v.next}` }));
-    S.posts.filter(p => p.mine).forEach(p => ev.push({ kind:"post", d:p.date || today(), emoji:"📸", title:"发布了一条日常", desc:p.text, media:p.media }));
+    S.posts.filter(p => p.mine).forEach(p => ev.push({ kind:"post", d:p.date || today(), emoji:"📸", title:"发布了一条日常", desc:p.text,
+      images: Array.isArray(p.images) ? p.images : null, media: (Array.isArray(p.images) && p.images.length) || +p.media || 0 }));
     ev.push({ kind:"milestone", d:(S.weights[0] && S.weights[0].d) || today(), emoji:"🌱", title:`创建了${S.pet.name}的成长档案`, desc:"从此每一次成长都有据可查" });
     return ev.sort((a, b) => (a.d < b.d ? 1 : -1));
   }
@@ -636,6 +793,16 @@ html,body{overflow-x:hidden;max-width:100%}
   }
 
   /* ================= components ================= */
+  function mediaBlock(p) {
+    const imgs = Array.isArray(p.images) ? p.images : [];
+    if (imgs.length) {
+      return `<div class="post-media" data-n="${imgs.length}">${imgs.map((src, i) =>
+        `<img src="${src}" alt="${esc(p.user)} 的配图 ${i + 1}" loading="lazy" data-act="zoom" data-id="${p.id}" data-i="${i}">`).join("")}</div>`;
+    }
+    const n = +p.media || 0;
+    if (!n) return "";
+    return `<div class="post-media" data-n="${Math.min(n, 3)}">${Array.from({ length: n }).map(() => `<i>${p.emoji || "🐾"}</i>`).join("")}</div>`;
+  }
   function heroCard() {
     const lw = latestWeight();
     const prev = S.weights.length > 1 ? S.weights[S.weights.length - 2] : null;
@@ -710,7 +877,9 @@ html,body{overflow-x:hidden;max-width:100%}
             <div class="tl-body">
               <b>${i.emoji} ${esc(i.title)}</b>
               <p>${esc(i.desc)}</p>
-              ${i.media ? `<div class="tl-photo">${Array.from({ length: i.media }).map(() => `<i>🐾</i>`).join("")}</div>` : ""}
+              ${i.images && i.images.length
+                ? `<div class="tl-photo">${i.images.map((src, k) => `<img src="${src}" alt="配图 ${k + 1}" loading="lazy">`).join("")}</div>`
+                : i.media ? `<div class="tl-photo">${Array.from({ length: i.media }).map(() => `<i>🐾</i>`).join("")}</div>` : ""}
             </div>
           </div>`).join("")}
       </div>`).join("");
@@ -907,7 +1076,7 @@ html,body{overflow-x:hidden;max-width:100%}
             </div>
           </div>
           <p class="post-b">${esc(p.text)}</p>
-          ${p.media ? `<div class="post-media">${Array.from({ length: p.media }).map(() => `<i>${p.emoji || "🐾"}</i>`).join("")}</div>` : ""}
+          ${mediaBlock(p)}
           <div class="post-a">
             <button data-act="like" data-id="${p.id}" aria-pressed="${!!p.liked}">${p.liked ? "♥" : "♡"} ${p.likes}</button>
             <button data-act="cmt">💬 ${p.cmt}</button>
@@ -997,7 +1166,7 @@ html,body{overflow-x:hidden;max-width:100%}
 
       <div class="sec">
         <h3><em>5</em>数据与边界</h3>
-        <p>健康数据属于强隐私，原型阶段全部落在本机 localStorage，可一键导出 JSON、可一键清空；不做账号体系也就不存在数据外泄路径。上线版本应改为端侧加密 + 可选云同步。</p>
+        <p>健康数据属于强隐私，原型阶段全部落在本机 localStorage，可一键导出 JSON、可一键清空；不做账号体系也就不存在数据外泄路径。动态配图在浏览器内压到长边 1280px 再存储，全程不上传任何服务器。上线版本应改为端侧加密 + 可选云同步。</p>
         <p style="color:#8C7A70;font-size:12px">本作品为纯前端演示：无后端、无账号、无网络请求，所有交互与计算在浏览器内完成。</p>
       </div>
 
@@ -1012,6 +1181,31 @@ html,body{overflow-x:hidden;max-width:100%}
         <p style="text-align:right;font-size:11.5px;color:#A28C7E;margin-top:12px">PawLog · 产品原型 v2</p>
       </div>
     </section>`;
+
+  /* ================= lightbox ================= */
+  let lbList = [], lbIdx = 0;
+  function renderLB() {
+    const box = document.getElementById("lb");
+    if (!box) return;
+    const img = document.getElementById("lb-img");
+    if (img) img.src = lbList[lbIdx] || "";
+    const c = document.getElementById("lb-count");
+    if (c) c.textContent = lbList.length > 1 ? `${lbIdx + 1} / ${lbList.length}` : "";
+    [].slice.call(box.querySelectorAll(".nav")).forEach(n => { n.style.display = lbList.length > 1 ? "grid" : "none"; });
+  }
+  function openLB(list, i) {
+    lbList = list.slice(); lbIdx = i;
+    renderLB();
+    const box = document.getElementById("lb");
+    if (box) box.dataset.open = "1";
+  }
+  function closeLB() { const box = document.getElementById("lb"); if (box) box.dataset.open = "0"; }
+  function lbAction(a) {
+    if (a === "close") return closeLB();
+    if (!lbList.length) return;
+    lbIdx = (lbIdx + (a === "next" ? 1 : -1) + lbList.length) % lbList.length;
+    renderLB();
+  }
 
   /* ================= router ================= */
   const R = { page: "tab", tab: "home" };
@@ -1056,10 +1250,12 @@ html,body{overflow-x:hidden;max-width:100%}
 
   /* ================= actions ================= */
   document.addEventListener("click", e => {
-    const t = e.target.closest("[data-act],[data-tab],[data-page],[data-filter],[data-tlf]");
+    const t = e.target.closest("[data-act],[data-tab],[data-page],[data-filter],[data-tlf],[data-del],[data-lb]");
     if (!t) return;
     const act = t.dataset.act;
 
+    if (t.dataset.del !== undefined) { draftImgs.splice(+t.dataset.del, 1); paintDraft(); return; }
+    if (t.dataset.lb) { lbAction(t.dataset.lb); return; }
     if (t.dataset.tab && !act) { goTab(t.dataset.tab); return; }
     if (t.dataset.page && !act) { goPage(t.dataset.page); return; }
     if (t.dataset.filter) { cf = t.dataset.filter; render(); return; }
@@ -1125,18 +1321,47 @@ html,body{overflow-x:hidden;max-width:100%}
         break;
       }
       case "new-post":
+        draftImgs = [];
         sheet(`<h4 id="sheet-title">分享养宠日常</h4>
           <div class="field"><label>说点什么</label><textarea id="p-text" placeholder="今天带 ${esc(S.pet.name)} 去了…"></textarea></div>
-          <div class="field"><label>配图（原型以占位块呈现）</label><select id="p-media"><option value="0">不配图</option><option value="1">1 张</option><option value="3">3 张</option></select></div>
+          <div class="field">
+            <label>配图 · 最多 ${MAX_PER_POST} 张</label>
+            <div class="up" id="up-zone">
+              <div class="up-grid" id="up-grid"></div>
+              <div class="up-actions">
+                <button type="button" class="up-btn" data-act="shoot">📷 拍照</button>
+                <button type="button" class="up-btn" data-act="pick">🖼 从相册选</button>
+              </div>
+              <p class="up-hint">也可以把图片拖进来，或直接粘贴（Ctrl / ⌘ + V）</p>
+            </div>
+            <input id="in-shot" type="file" accept="image/*" capture="environment" hidden>
+            <input id="in-pick" type="file" accept="image/*" multiple hidden>
+          </div>
           <div style="display:flex;gap:10px"><button class="btn ghost" data-act="close">取消</button><button class="btn wide" data-act="save-post">发布</button></div>`);
+        bindComposer();
         break;
+      case "shoot": { const i = document.getElementById("in-shot"); if (i) i.click(); break; }
+      case "pick": { const i = document.getElementById("in-pick"); if (i) i.click(); break; }
       case "save-post": {
         const text = (($("#p-text") || {}).value || "").trim();
         if (!text) { toast("写点内容再发布"); return; }
+        const pending = draftImgs.some(x => x.pending);
+        const images = draftImgs.filter(x => x.data).map(x => x.data);
         S.posts.unshift({ id: "p" + Date.now(), user: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
-          city: `${S.pet.city} · ${S.pet.district}`, text, media: +($("#p-media").value || 0), emoji: "🐾",
+          city: `${S.pet.city} · ${S.pet.district}`, text, media: images.length, images: images.length ? images : undefined, emoji: "🐾",
           likes: 0, liked: false, cmt: 0, t: "刚刚", mine: true, date: today() });
-        save(); closeSheet(); goTab("community"); toast("已发布，时间线同步记录");
+        trimStoredImages();
+        if (!save()) { delete S.posts[0].images; S.posts[0].media = 0; save(); }
+        draftImgs = [];
+        closeSheet(); goTab("community");
+        toast(pending ? "已发布（有图片仍在压缩，未随帖保存）" : "已发布，时间线同步记录");
+        break;
+      }
+      case "zoom": {
+        const post = S.posts.find(x => x.id === t.dataset.id);
+        const list = post && Array.isArray(post.images) ? post.images : [];
+        if (!list.length) break;
+        openLB(list, Math.max(0, Math.min(list.length - 1, +t.dataset.i || 0)));
         break;
       }
       case "like": {
@@ -1179,7 +1404,22 @@ html,body{overflow-x:hidden;max-width:100%}
   });
 
   $("#sheet").addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+  const lbBox = document.getElementById("lb");
+  if (lbBox) lbBox.addEventListener("click", e => { if (e.target.id === "lb") closeLB(); });
+  document.addEventListener("paste", e => {
+    if ($("#sheet").dataset.open !== "1" || !document.getElementById("up-zone")) return;
+    const files = (e.clipboardData && e.clipboardData.files) || [];
+    if (files && files.length) { e.preventDefault(); addImages(files); }
+  });
+  document.addEventListener("keydown", e => {
+    const box = document.getElementById("lb");
+    if (box && box.dataset.open === "1") {
+      if (e.key === "Escape") { closeLB(); return; }
+      if (e.key === "ArrowLeft") { lbAction("prev"); return; }
+      if (e.key === "ArrowRight") { lbAction("next"); return; }
+    }
+    if (e.key === "Escape") closeSheet();
+  });
   document.querySelectorAll(".tabbar button").forEach(b => b.addEventListener("click", () => goTab(b.dataset.tab)));
 
   /* ================= boot ================= */
