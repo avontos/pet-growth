@@ -29,11 +29,29 @@
 - **路由**：`#home` / `#health` / `#timeline` / `#community` / `#me` / `#about`，可直接深链
 - **演示数据以"今天"为基准生成**，任何一天打开看到的都是新鲜状态（今日待办、临期提醒、逾期项都是相对日期算出来的）
 
+## 云端共享（可选）
+
+默认是纯本机模式：动态和照片只存在你自己的浏览器里。想让**所有访客看到同一批照片**，接一个免费的 Supabase 项目即可（前端零依赖，走 PostgREST + Storage REST，不引 SDK）：
+
+1. 新建 Supabase 项目 → SQL Editor 里整段执行 [`cloud/setup.sql`](cloud/setup.sql)（建表 `pawlog_posts`、公开 bucket `pawlog`、只读全表 + 仅允许 anon 插入的 RLS）。
+2. 项目设置里复制 **Project URL** 和 **anon public key**。
+3. 打开 `index.html`，改这一行（在脚本开头的「云端共享」区块）：
+
+```js
+const CLOUD = { url: "https://xxxx.supabase.co", key: "eyJhbGciOi...", bucket: "pawlog", table: "pawlog_posts" };
+```
+
+保存并部署，社区页的「本机演示」标签会变成「云端 · 所有人可见」：任何人发布都会写进数据库，照片进对象存储，所有人（含面试官）都能看到。留空则一切照旧，不会报错。
+
+健康档案始终只存本机——它属于强隐私，不上云。
+
 ## 目录
 
 ```
-index.html      # 全部产品代码（单文件）
-test/smoke.js   # 无浏览器冒烟测试：抽出内联脚本 + 桩 DOM，逐视图渲染校验
+index.html               # 全部产品代码（单文件）
+cloud/setup.sql          # Supabase 建表 + bucket + RLS 策略
+test/smoke.js            # 无浏览器冒烟测试：抽出内联脚本 + 桩 DOM，逐视图渲染校验
+test/mock-supabase.js    # 本地模拟 PostgREST + Storage，验证云端代码路径（含静态托管）
 ```
 
 ```bash

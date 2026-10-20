@@ -518,6 +518,99 @@ html,body{overflow-x:hidden;max-width:100%}
     }
   }
 
+  /* ================= 云端共享（可选） =================
+     填上 Supabase 项目 URL 与 anon key 后，社区动态与照片对所有访客共享。
+     留空 = 纯本机模式，行为与之前完全一致；健康数据始终只留在本机。 */
+  const CLOUD = { url: "", key: "", bucket: "pawlog", table: "pawlog_posts" };
+  const cloudOn = () => !!(CLOUD.url && CLOUD.key);
+  const remote = { posts: [], loading: false, error: "" };
+  const cloudBase = () => CLOUD.url.replace(/\/+$/, "");
+
+  async function cloudApi(path, opts) {
+    const o = opts || {};
+    const res = await fetch(cloudBase() + path, {
+      method: o.method || "GET",
+      headers: Object.assign({ apikey: CLOUD.key, Authorization: "Bearer " + CLOUD.key }, o.headers || {}),
+      body: o.body
+    });
+    if (!res.ok) throw new Error("cloud " + res.status + " " + (await res.text()).slice(0, 140));
+    const txt = await res.text();
+    return txt ? JSON.parse(txt) : null;
+  }
+  async function cloudUpload(dataUrl) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const name = Date.now().toString(36) + Math.random().toString(36).slice(2, 7) + ".jpg";
+    const res = await fetch(`${cloudBase()}/storage/v1/object/${CLOUD.bucket}/${name}`, {
+      method: "POST",
+      headers: {
+        apikey: CLOUD.key,
+        Authorization: "Bearer " + CLOUD.key,
+        "Content-Type": blob.type || "image/jpeg",
+        "cache-control": "31536000",
+        "x-upsert": "false"
+      },
+      body: blob
+    });
+    if (!res.ok) throw new Error("upload " + res.status + " " + (await res.text()).slice(0, 140));
+    return `${cloudBase()}/storage/v1/object/public/${CLOUD.bucket}/${name}`;
+  }
+  function timeAgo(iso) {
+    const t = new Date(iso).getTime();
+    if (!t) return "";
+    const m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return "刚刚";
+    if (m < 60) return m + " 分钟前";
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + " 小时前";
+    const d = Math.floor(h / 24);
+    return d < 30 ? d + " 天前" : String(iso).slice(0, 10);
+  }
+  function normalizeRemote(r) {
+    const imgs = Array.isArray(r.images) ? r.images : [];
+    return {
+      id: "r" + r.id, user: r.user || "匿名宠友", avatar: r.avatar || "🐾", pet: r.pet || "",
+      city: r.city || "", text: r.body || "", images: imgs, media: imgs.length,
+      likes: r.likes || 0, liked: false, cmt: 0, t: timeAgo(r.created_at), remote: true
+    };
+  }
+  async function refreshRemote() {
+    if (!cloudOn()) return;
+    remote.loading = true; remote.error = "";
+    render();
+    try {
+      const rows = await cloudApi(`/rest/v1/${CLOUD.table}?select=*&order=created_at.desc&limit=60`);
+      remote.posts = (rows || []).map(normalizeRemote);
+    } catch (e) {
+      remote.error = "云端暂时不可用，已回落到本机";
+      remote.posts = [];
+    } finally {
+      remote.loading = false;
+      render();
+    }
+  }
+  async function cloudPublish(text, images) {
+    const urls = [];
+    for (let i = 0; i < images.length; i++) urls.push(await cloudUpload(images[i]));
+    await cloudApi(`/rest/v1/${CLOUD.table}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({
+        user: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
+        city: `${S.pet.city} · ${S.pet.district}`, body: text, images: urls
+      })
+    });
+  }
+  const feedIsCloud = () => cloudOn() && remote.posts.length > 0;
+  const feedPosts = () => (feedIsCloud() ? remote.posts : S.posts);
+
+  function localSavePost(text, images) {
+    S.posts.unshift({ id: "p" + Date.now(), user: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
+      city: `${S.pet.city} · ${S.pet.district}`, text, media: images.length, images: images.length ? images : undefined,
+      emoji: "🐾", likes: 0, liked: false, cmt: 0, t: "刚刚", mine: true, date: today() });
+    trimStoredImages();
+    if (!save()) { delete S.posts[0].images; S.posts[0].media = 0; save(); }
+  }
+
   /* ================= helpers ================= */
   const $ = (s, r = document) => r.querySelector(s);
   const view = $("#view");
@@ -797,7 +890,7 @@ html,body{overflow-x:hidden;max-width:100%}
     const imgs = Array.isArray(p.images) ? p.images : [];
     if (imgs.length) {
       return `<div class="post-media" data-n="${imgs.length}">${imgs.map((src, i) =>
-        `<img src="${src}" alt="${esc(p.user)} 的配图 ${i + 1}" loading="lazy" data-act="zoom" data-id="${p.id}" data-i="${i}">`).join("")}</div>`;
+        `<img src="${src}" alt="配图 ${i + 1}" loading="lazy" data-act="zoom" data-id="${p.id}" data-i="${i}" onerror="this.replaceWith(Object.assign(document.createElement('i'),{textContent:'🖼️',title:'图片加载失败'}))">`).join("")}</div>`;
     }
     const n = +p.media || 0;
     if (!n) return "";
@@ -1065,8 +1158,14 @@ html,body{overflow-x:hidden;max-width:100%}
           </div>`).join("") : `<div class="empty"><div class="e">🔍</div><p>该条件下暂时没有宠友<br>换成「同城」看看</p></div>`}
       </div>
 
-      <div class="card-h" style="margin:18px 4px 0"><h3>养宠日常</h3><span class="tag">${S.posts.length} 条</span><button class="btn sm" style="margin-left:auto" data-act="new-post">＋ 发布</button></div>
-      ${S.posts.map(p => `
+      <div class="card-h" style="margin:18px 4px 0">
+        <h3>养宠日常</h3>
+        <span class="tag">${feedPosts().length} 条</span>
+        <span class="tag" style="${cloudOn() ? "background:#EAF4ED;color:#4E8A63" : ""}">${cloudOn() ? (remote.loading ? "云端同步中…" : remote.error ? "云端不可用" : "云端 · 所有人可见") : "本机演示"}</span>
+        <button class="btn sm" style="margin-left:auto" data-act="new-post">＋ 发布</button>
+      </div>
+      ${cloudOn() && !remote.posts.length && !remote.loading ? `<p style="font-size:11.5px;color:#A28C7E;margin:0 4px 6px">云端还没有人发布。你发了之后，任何访客打开这个链接都能看到；下面是本机演示数据。</p>` : ""}
+      ${feedPosts().map(p => `
         <article class="post">
           <div class="post-h">
             <div class="av">${p.avatar}</div>
@@ -1110,6 +1209,10 @@ html,body{overflow-x:hidden;max-width:100%}
         <div class="card-h"><h3>数据与偏好</h3></div>
         <div class="row"><span class="k">记录总数</span><span class="v">${S.weights.length} 次体重 · ${S.vaccines.length} 条疫苗 · ${S.deworm.length} 条驱虫 · ${S.posts.length} 条动态</span></div>
         <div class="row"><span class="k">存储方式</span><span class="v">本机浏览器 localStorage，刷新不丢</span></div>
+        <div class="row"><span class="k">动态共享</span><span class="v">${cloudOn()
+          ? (remote.error ? `云端异常（${esc(remote.error)}）` : `云端已连接 · ${remote.posts.length} 条对所有人可见`)
+          : "仅本机（未配置云端）"}</span></div>
+        ${cloudOn() ? `<div class="row"><span class="k">刷新</span><span class="v"><button class="btn sm ghost" data-act="cloud-refresh">从云端重新加载动态</button></span></div>` : ""}
         <div class="row"><span class="k">导出</span><span class="v"><button class="btn sm ghost" data-act="export">导出成长档案 JSON</button></span></div>
         <div class="row"><span class="k">演示数据</span><span class="v"><button class="btn sm ghost" data-act="reset">重置为初始数据</button></span></div>
         <div class="row"><span class="k">产品说明</span><span class="v"><button class="btn sm ghost" data-page="about">看设计取舍 ›</button></span></div>
@@ -1332,7 +1435,7 @@ html,body{overflow-x:hidden;max-width:100%}
                 <button type="button" class="up-btn" data-act="shoot">📷 拍照</button>
                 <button type="button" class="up-btn" data-act="pick">🖼 从相册选</button>
               </div>
-              <p class="up-hint">也可以把图片拖进来，或直接粘贴（Ctrl / ⌘ + V）</p>
+              <p class="up-hint">也可以把图片拖进来，或直接粘贴（Ctrl / ⌘ + V）${cloudOn() ? "；发布后所有访客可见" : ""}</p>
             </div>
             <input id="in-shot" type="file" accept="image/*" capture="environment" hidden>
             <input id="in-pick" type="file" accept="image/*" multiple hidden>
@@ -1347,27 +1450,46 @@ html,body{overflow-x:hidden;max-width:100%}
         if (!text) { toast("写点内容再发布"); return; }
         const pending = draftImgs.some(x => x.pending);
         const images = draftImgs.filter(x => x.data).map(x => x.data);
-        S.posts.unshift({ id: "p" + Date.now(), user: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
-          city: `${S.pet.city} · ${S.pet.district}`, text, media: images.length, images: images.length ? images : undefined, emoji: "🐾",
-          likes: 0, liked: false, cmt: 0, t: "刚刚", mine: true, date: today() });
-        trimStoredImages();
-        if (!save()) { delete S.posts[0].images; S.posts[0].media = 0; save(); }
-        draftImgs = [];
+
+        /* 云端模式：先传图到对象存储，再写动态表，成功后刷新共享列表 */
+        if (cloudOn()) {
+          const btn = t; if (btn && btn.disabled !== undefined) { btn.disabled = true; btn.textContent = "发布中…"; }
+          cloudPublish(text, images).then(() => {
+            draftImgs = [];
+            closeSheet();
+            remote.posts = [];
+            return refreshRemote();
+          }).then(() => {
+            goTab("community");
+            toast("已发布 · 所有访客现在都能看到这条动态");
+          }).catch(err => {
+            console.error(err);
+            toast("云端发布失败，已存到本机（其他人暂时看不到）");
+            localSavePost(text, images);
+            closeSheet(); goTab("community");
+          });
+          break;
+        }
+
+        localSavePost(text, images);
         closeSheet(); goTab("community");
         toast(pending ? "已发布（有图片仍在压缩，未随帖保存）" : "已发布，时间线同步记录");
         break;
       }
+      case "cloud-refresh": refreshRemote(); toast("正在从云端刷新…"); break;
       case "zoom": {
-        const post = S.posts.find(x => x.id === t.dataset.id);
+        const post = feedPosts().find(x => x.id === t.dataset.id) || S.posts.find(x => x.id === t.dataset.id);
         const list = post && Array.isArray(post.images) ? post.images : [];
         if (!list.length) break;
         openLB(list, Math.max(0, Math.min(list.length - 1, +t.dataset.i || 0)));
         break;
       }
       case "like": {
-        const p = S.posts.find(x => x.id === t.dataset.id);
+        const p = feedPosts().find(x => x.id === t.dataset.id);
         if (!p) return;
-        p.liked = !p.liked; p.likes += p.liked ? 1 : -1; save(); render();
+        p.liked = !p.liked; p.likes += p.liked ? 1 : -1;
+        if (!p.remote) save();
+        render();
         break;
       }
       case "cmt": toast("评论在下一版开放，先留个爱心吧"); break;
@@ -1428,7 +1550,7 @@ html,body{overflow-x:hidden;max-width:100%}
     <div class="sk" style="height:150px;margin-top:14px"></div>
     <div class="sk" style="height:190px;margin-top:14px"></div>`;
   routeFromHash();
-  setTimeout(() => { render(); }, 280);
+  setTimeout(() => { render(); if (cloudOn()) refreshRemote(); }, 280);
 })();
 </script>
 </body>
