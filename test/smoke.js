@@ -13,16 +13,27 @@ src = src.replace(
   "globalThis.__TEST = { V, R, matchInfo, allEvents, chart, S };\n  /* ================= boot ================="
 );
 
+const classList = () => ({
+  add() {},
+  remove() {},
+  toggle() {},
+  contains: () => false,
+});
+
 const el = () => {
   const node = {
     innerHTML: "",
     textContent: "",
     dataset: {},
     scrollTop: 0,
+    classList: classList(),
     setAttribute() {},
     addEventListener() {},
     appendChild() {},
     click() {},
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 340, height: 140 }),
     style: {},
   };
   return node;
@@ -49,6 +60,7 @@ const sandbox = {
   document: {
     querySelector: () => el(),
     querySelectorAll: () => [],
+    getElementById: () => null,
     addEventListener: () => {},
     createElement: () => el(),
   },
@@ -86,6 +98,18 @@ try {
   console.log(`OK   match      score=${list.score} reasons=${list.reasons.length}`);
 } catch (e) {
   console.log("FAIL match: " + e.message); fail++;
+}
+try {
+  const html = T.V.health();
+  const dots = (html.match(/class="pt"/g) || []).length;
+  const hasTip = html.includes('id="wt-tip"');
+  const hasCross = html.includes("wt-cross");
+  const hasHit = html.includes("wt-hit");
+  console.log(`OK   chart      dots=${dots} tip=${hasTip} cross=${hasCross} hit=${hasHit}`);
+  if (dots !== 8 || !hasTip || !hasCross || !hasHit) { console.log("FAIL chart structure"); fail++; }
+  if (/data-i="\d+"/.test(html) === false) { console.log("FAIL chart dots missing data-i"); fail++; }
+} catch (e) {
+  console.log("FAIL chart: " + e.message); fail++;
 }
 console.log(fail === 0 ? "SMOKE PASS" : `SMOKE FAIL (${fail})`);
 process.exit(fail === 0 ? 0 : 1);

@@ -176,9 +176,29 @@ html,body{overflow-x:hidden;max-width:100%}
 .month-head::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* ---------- chart ---------- */
-.chart-wrap{margin:4px -4px 0}
-.chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-wrap{margin:4px -4px 0;position:relative}
+.chart-wrap svg{width:100%;height:auto;display:block;overflow:visible;touch-action:pan-y;cursor:crosshair}
+.chart-wrap svg:active{cursor:grabbing}
+.pt .dot{transform-box:fill-box;transform-origin:center;transition:transform .14s ease, filter .14s ease}
+.pt.on .dot{transform:scale(1.85);filter:drop-shadow(0 3px 6px rgba(224,107,78,.5))}
+.wt-cross{stroke:#EFB6A2;stroke-width:1.2;stroke-dasharray:3 4;opacity:0;transition:opacity .14s ease;pointer-events:none}
+#wt-last{transition:opacity .14s ease}
+.wt-tip{
+  position:absolute;left:0;top:0;z-index:8;pointer-events:none;
+  background:#3B302B;color:#fff;border-radius:12px;padding:7px 11px;
+  font-size:11.5px;line-height:1.4;white-space:nowrap;
+  box-shadow:0 12px 24px -14px rgba(59,48,43,.85);
+  opacity:0;transform:translate(-50%,-100%);transition:opacity .14s ease;
+}
+.wt-tip.on{opacity:1}
+.wt-tip.at-left{transform:translate(-8px,-100%)}
+.wt-tip.at-right{transform:translate(calc(-100% + 8px),-100%)}
+.wt-tip .d{display:block;font-size:10px;opacity:.62;letter-spacing:.3px}
+.wt-tip b{display:block;font-size:14px;font-weight:800;letter-spacing:-.2px}
+.wt-tip .x{display:block;font-size:10px;color:#F7BDA9}
 .chart-x{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);padding:6px 10px 0}
+.chart-x span{transition:color .14s ease,font-weight .14s ease}
+.chart-x span.on{color:var(--coral-deep);font-weight:800}
 .kpi-row{display:flex;gap:10px;margin-top:12px}
 .kpi{flex:1;min-width:0;background:var(--sand);border-radius:13px;padding:9px 11px;overflow:hidden}
 .kpi b{display:block;font-size:15px}
@@ -501,12 +521,14 @@ html,body{overflow-x:hidden;max-width:100%}
   }
 
   /* ================= chart ================= */
+  let CHART = null;
   function chart(lastN, h, showBand) {
     const w = S.weights.slice(-(lastN || 8));
     if (w.length < 2) {
+      CHART = null;
       return `<div class="empty"><div class="e">📈</div><p>再记录 1 次体重即可生成曲线</p></div>`;
     }
-    const W = 340, H = h || 132, PL = 14, PR = 16, PT = 18, PB = 20;
+    const W = 340, H = h || 132, PL = 14, PR = 16, PT = 26, PB = 22;
     const band = showBand ? S.pet.range : null;
     const vals = w.map(x => x.kg);
     let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -514,17 +536,28 @@ html,body{overflow-x:hidden;max-width:100%}
     lo -= 0.5; hi += 0.5;
     const Y = v => PT + (1 - (v - lo) / (hi - lo)) * (H - PT - PB);
     const stepX = (W - PL - PR) / (w.length - 1);
-    const pt = w.map((d, i) => [PL + i * stepX, Y(d.kg)]);
-    const line = pt.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
-    const area = `${line} L${pt[pt.length - 1][0].toFixed(1)} ${H - PB} L${pt[0][0].toFixed(1)} ${H - PB} Z`;
-    const dots = pt.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === pt.length - 1 ? 4.4 : 2.8}" fill="#fff" stroke="#F4876B" stroke-width="2.2"/>`).join("");
-    const last = pt[pt.length - 1];
+    const pts = w.map((d, i) => ({
+      x: +(PL + i * stepX).toFixed(2),
+      y: +Y(d.kg).toFixed(2),
+      kg: d.kg,
+      d: d.d,
+      delta: i === 0 ? null : +(d.kg - w[i - 1].kg).toFixed(1)
+    }));
+    CHART = { W, H, pts };
+    const line = pts.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
+    const area = `${line} L${pts[pts.length - 1].x} ${H - PB} L${pts[0].x} ${H - PB} Z`;
+    const dots = pts.map((p, i) => `
+      <g class="pt" data-i="${i}">
+        <circle class="dot" cx="${p.x}" cy="${p.y}" r="${i === pts.length - 1 ? 4.6 : 3.2}" fill="#fff" stroke="#F4876B" stroke-width="2.2"/>
+      </g>`).join("");
+    const last = pts[pts.length - 1];
     const bandSvg = band ? `<rect x="${PL}" y="${Y(band[1]).toFixed(1)}" width="${(W - PL - PR).toFixed(1)}" height="${Math.abs(Y(band[0]) - Y(band[1])).toFixed(1)}" fill="#EAF4ED"/>
       <line x1="${PL}" x2="${W - PR}" y1="${Y(band[1]).toFixed(1)}" y2="${Y(band[1]).toFixed(1)}" stroke="#BFDCC8" stroke-dasharray="4 4"/>
       <line x1="${PL}" x2="${W - PR}" y1="${Y(band[0]).toFixed(1)}" y2="${Y(band[0]).toFixed(1)}" stroke="#BFDCC8" stroke-dasharray="4 4"/>` : "";
     return `
       <div class="chart-wrap">
-        <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="体重变化曲线">
+        <div class="wt-tip" id="wt-tip" aria-hidden="true"></div>
+        <svg id="wt-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="体重变化曲线，可查看每天的具体数值">
           <defs>
             <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#F4876B" stop-opacity=".26"/>
@@ -534,12 +567,72 @@ html,body{overflow-x:hidden;max-width:100%}
           ${bandSvg}
           <path d="${area}" fill="url(#g1)"/>
           <path d="${line}" fill="none" stroke="#F4876B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <line class="wt-cross" x1="${pts[0].x}" y1="${PT - 6}" x2="${pts[0].x}" y2="${H - PB}"/>
           ${dots}
-          <text x="${Math.min(last[0], W - 28)}" y="${Math.max(last[1] - 11, 12)}" text-anchor="middle" font-size="12" font-weight="700" fill="#E06B4E">${vals[vals.length - 1]}kg</text>
+          <text id="wt-last" x="${Math.min(last.x, W - 30)}" y="${Math.max(last.y - 12, 13)}" text-anchor="middle" font-size="12" font-weight="700" fill="#E06B4E">${vals[vals.length - 1]}kg</text>
+          <rect class="wt-hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
         </svg>
       </div>
-      <div class="chart-x">${w.map(d => `<span>${fmtCN(d.d)}</span>`).join("")}</div>
-      ${band ? `<div class="legend"><span><i style="background:#EAF4ED"></i>${esc(S.pet.rangeNote || "标准区间")}</span><span><i style="background:#F4876B"></i>体重记录</span></div>` : ""}`;
+      <div class="chart-x">${w.map((d, i) => `<span data-i="${i}">${fmtCN(d.d)}</span>`).join("")}</div>
+      ${band ? `<div class="legend"><span><i style="background:#EAF4ED"></i>${esc(S.pet.rangeNote || "标准区间")}</span><span><i style="background:#F4876B"></i>体重记录</span><span style="margin-left:auto;color:#B09A8B">悬停 / 拖动看图</span></div>` : ""}`;
+  }
+
+  /* 悬停（桌面）/ 拖动（触屏）取最近节点，浮标显示日期·体重·变化 */
+  function bindChart() {
+    const svg = document.getElementById("wt-svg");
+    if (!svg || !CHART || !svg.querySelectorAll) return;
+    const { W, H, pts } = CHART;
+    const tip = document.getElementById("wt-tip");
+    const cross = svg.querySelector(".wt-cross");
+    const dots = [].slice.call(svg.querySelectorAll(".pt"));
+    const xlabels = [].slice.call(document.querySelectorAll(".chart-x span"));
+    const lastLabel = document.getElementById("wt-last");
+    const fmtD = d => { const a = String(d).split("-"); return a.length === 3 ? `${+a[1]} 月 ${+a[2]} 日` : d; };
+    let active = -1;
+
+    function paint(i) {
+      if (i === active) return;
+      active = i;
+      const p = pts[i];
+      dots.forEach((g, k) => g.classList.toggle("on", k === i));
+      xlabels.forEach((s, k) => s.classList.toggle("on", k === i));
+      cross.setAttribute("x1", p.x);
+      cross.setAttribute("x2", p.x);
+      cross.style.opacity = "1";
+      if (lastLabel) lastLabel.style.opacity = i === pts.length - 1 ? "1" : "0";
+      tip.innerHTML = `<span class="d">${fmtD(p.d)}</span><b>${p.kg} kg</b><span class="x">${
+        p.delta === null ? "首次记录" : (p.delta > 0 ? "较上次 +" : "较上次 ") + p.delta + " kg"}</span>`;
+      const rect = svg.getBoundingClientRect();
+      const px = rect.width ? (p.x / W) * rect.width : p.x;
+      tip.style.left = px.toFixed(1) + "px";
+      tip.style.top = Math.max(((p.y / H) * rect.height - 12).toFixed(1), 4) + "px";
+      tip.classList.toggle("at-left", px < 58);
+      tip.classList.toggle("at-right", px > (rect.width || W) - 58);
+      tip.classList.add("on");
+    }
+    function clear() {
+      if (active === -1) return;
+      active = -1;
+      dots.forEach(g => g.classList.remove("on"));
+      xlabels.forEach(s => s.classList.remove("on"));
+      cross.style.opacity = "0";
+      if (lastLabel) lastLabel.style.opacity = "1";
+      tip.classList.remove("on");
+    }
+    function nearest(clientX) {
+      const rect = svg.getBoundingClientRect();
+      const x = rect.width ? ((clientX - rect.left) / rect.width) * W : 0;
+      let best = 0, bd = Infinity;
+      pts.forEach((p, i) => { const dd = Math.abs(p.x - x); if (dd < bd) { bd = dd; best = i; } });
+      return best;
+    }
+    svg.addEventListener("pointermove", e => paint(nearest(e.clientX)));
+    svg.addEventListener("pointerdown", e => {
+      if (svg.setPointerCapture && e.pointerId !== undefined) { try { svg.setPointerCapture(e.pointerId); } catch (err) {} }
+      paint(nearest(e.clientX));
+    });
+    svg.addEventListener("pointerleave", clear);
+    svg.addEventListener("pointercancel", clear);
   }
 
   /* ================= components ================= */
@@ -948,6 +1041,7 @@ html,body{overflow-x:hidden;max-width:100%}
     view.innerHTML = R.page === "tab" ? V[R.tab]() : V[R.page]();
     document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-selected", String(R.page === "tab" && b.dataset.tab === R.tab)));
     view.scrollTop = 0;
+    bindChart();
     try { const h = "#" + (R.page === "tab" ? R.tab : R.page); if (location.hash !== h) history.replaceState(null, "", h); } catch (e) {}
   }
   const goTab = t => { if (!V[t]) return; R.page = "tab"; R.tab = t; render(); };
