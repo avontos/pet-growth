@@ -34,7 +34,7 @@ ul{margin:0;padding:0;list-style:none}
 /* ---------- shell ---------- */
 .shell{display:block;min-height:100vh;width:100%;max-width:100vw;overflow-x:clip}
 .side{display:none}
-.phone{width:100%;max-width:480px;min-width:0;margin:0 auto;min-height:100vh;position:relative;display:flex;flex-direction:column;box-sizing:border-box}
+.phone{width:100%;max-width:480px;min-width:0;margin:0 auto;height:100vh;height:100dvh;overflow:hidden;position:relative;display:flex;flex-direction:column;box-sizing:border-box}
 @media(min-width:1024px){
   .shell{display:flex;justify-content:center;gap:44px;align-items:center;max-width:1180px;margin:0 auto;padding:28px 24px;min-height:100vh}
   .side{display:block;flex:1 1 420px;max-width:520px;align-self:center;animation:fadeUp .7s ease}
@@ -83,7 +83,7 @@ ul{margin:0;padding:0;list-style:none}
 .topbar h2{font-size:15.5px;font-weight:800;letter-spacing:-.2px}
 
 /* ---------- scroll body ---------- */
-.view{flex:1;overflow-y:auto;overflow-x:hidden;padding:15px 15px calc(94px + var(--safe))}
+.view{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:15px 15px calc(94px + var(--safe))}
 .view::-webkit-scrollbar{width:0}
 section{animation:pop .32s ease}
 
