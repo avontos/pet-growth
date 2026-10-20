@@ -568,7 +568,7 @@ html,body{overflow-x:hidden;max-width:100%}
   function normalizeRemote(r) {
     const imgs = Array.isArray(r.images) ? r.images : [];
     return {
-      id: "r" + r.id, user: r.user || "匿名宠友", avatar: r.avatar || "🐾", pet: r.pet || "",
+      id: "r" + r.id, user: r.author || r.user || "匿名宠友", avatar: r.avatar || "🐾", pet: r.pet || "",
       city: r.city || "", text: r.body || "", images: imgs, media: imgs.length,
       likes: r.likes || 0, liked: false, cmt: 0, t: timeAgo(r.created_at), remote: true
     };
@@ -595,7 +595,7 @@ html,body{overflow-x:hidden;max-width:100%}
       method: "POST",
       headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({
-        user: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
+        author: `我（${S.pet.name}的家长）`, avatar: S.pet.avatar, pet: S.pet.kind,
         city: `${S.pet.city} · ${S.pet.district}`, body: text, images: urls
       })
     });

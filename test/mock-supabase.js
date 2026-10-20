@@ -1,4 +1,4 @@
-// 本地模拟 Supabase：PostgREST 子集 + Storage 子集 + 静态托管，用来验证前端的云端代码路径。
+﻿// 本地模拟 Supabase：PostgREST 子集 + Storage 子集 + 静态托管，用来验证前端的云端代码路径。
 // 只实现爪记用到的那几个端点，故意保持最简。
 const http = require("http");
 const crypto = require("crypto");
@@ -25,7 +25,7 @@ let nextId = 1;
 rows.push({
   id: nextId++,
   created_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-  user: "橘子妈妈",
+  author: "橘子妈妈",
   avatar: "🐱",
   pet: "橘猫 · 2 岁",
   city: "上海 · 徐汇",
@@ -105,7 +105,7 @@ const server = http.createServer((req, res) => {
         const row = {
           id: nextId++,
           created_at: new Date().toISOString(),
-          user: body.user || "匿名",
+          author: body.author || body.user || "匿名",
           avatar: body.avatar || "🐾",
           pet: body.pet || "",
           city: body.city || "",
